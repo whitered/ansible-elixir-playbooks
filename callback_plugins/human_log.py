@@ -17,6 +17,8 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
+from ansible.plugins.callback import CallbackBase
+
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -28,10 +30,10 @@ except ImportError:
 
 # Fields to reformat output for
 FIELDS = ['cmd', 'command', 'start', 'end', 'delta', 'msg', 'stdout',
-          'stderr', 'results']
+          'stderr', 'results', 'failed', 'reason']
 
 
-class CallbackModule(object):
+class CallbackModule(CallbackBase):
 
     """
     Ansible callback plugin for human-readable result logging
@@ -44,10 +46,13 @@ class CallbackModule(object):
     def human_log(self, data):
         if type(data) == dict:
             for field in FIELDS:
-                no_log = data.get('_ansible_no_log')
+                no_log = data.get('_ansible_no_log', False)
                 if field in data.keys() and data[field] and no_log != True:
                     output = self._format_output(data[field])
-                    print("\n{0}: {1}".format(field, output.replace("\\n","\n")))
+                    # The following two lines are a hack to make it work with UTF-8 characters
+                    if type(output) != list:
+                        output = output.encode('utf-8', 'replace')
+                    self._display.display("\n{0}:\n{1}".format(field, output.replace("\\n","\n")), log_only=False)
 
     def _format_output(self, output):
         # Strip unicode
@@ -56,7 +61,7 @@ class CallbackModule(object):
 
         # If output is a dict
         if type(output) == dict:
-            return json.dumps(output, indent=2)
+            return json.dumps(output, indent=2, sort_keys=True)
 
         # If output is a list of dicts
         if type(output) == list and type(output[0]) == dict:
@@ -70,25 +75,11 @@ class CallbackModule(object):
                         if field in item.keys():
                             copy[field] = self._format_output(item[field])
                 real_output.append(copy)
-            return json.dumps(output, indent=2)
+            return json.dumps(output, indent=2, sort_keys=True)
 
         # If output is a list of strings
         if type(output) == list and type(output[0]) != dict:
-            # Strip newline characters
-            real_output = list()
-            for item in output:
-                if "\n" in item:
-                    for string in item.split("\n"):
-                        real_output.append(string)
-                else:
-                    real_output.append(item)
-
-            # Reformat lists with line breaks only if the total length is
-            # >75 chars
-            if len("".join(real_output)) > 75:
-                return "\n" + "\n".join(real_output)
-            else:
-                return " ".join(real_output)
+            return '\n'.join(output)
 
         # Otherwise it's a string, (or an int, float, etc.) just return it
         return str(output)
