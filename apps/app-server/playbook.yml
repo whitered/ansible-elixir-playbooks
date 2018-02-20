@@ -19,17 +19,28 @@
       authorized_key_paths:
         - ../../public_keys/*.pub
 
-    - role: install-build-essential/0.0.1
+    - role: install_nginx/0.0.1
 
-    - role: install_elixir/0.0.1
-
-    - role: install_nodejs/0.0.1
+    - role: install_postgresql/0.0.1
 
     - role: user/0.0.1
-      username: builder
+      username: phoenix
       authorized_key_paths:
         - ../../public_keys/*.pub
         - ./circle_ci.pub
+
+    - role: configure-postgresql/0.0.1
+      username: phoenix
+      database_name: phoenix
+
+    - role: phoenix-app/0.0.1
+      username: phoenix
+      app_name: phoenix_website
+
+    - role: lets_encrypt/0.0.1
+      app_name: phoenix_website
+      lets_encrypt_contact_email: dmitry.zhelnin@gmail.com
+      lets_encrypt_environment: production
 
     # This must be the last one role to log info about successfully provisioned machine.
     - role: provision_log/0.0.1

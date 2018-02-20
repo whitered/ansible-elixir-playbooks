@@ -2,9 +2,9 @@
 hostname: phoenix
 domains:
   # first domain is the main domain
-  - phoenix-website.lunarlogic.io
+  - app-server.example.org
   # other domains redirect to the main domain
-  - www.phoenix-website.lunarlogic.io
+  - www.app-server.example.org
 db_password: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           35313965306661613265333736386365613931643764616533613137626161623232393261653832

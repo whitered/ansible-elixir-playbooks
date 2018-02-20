@@ -1,0 +1,5 @@
+---
+hostname: build-server
+domains:
+  # first domain is the main domain
+  - build-server.example.org
